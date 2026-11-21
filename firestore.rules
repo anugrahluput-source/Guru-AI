@@ -1,0 +1,264 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Helpers ---
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    function isBootstrappedAdmin() {
+      return isSignedIn() && request.auth.token.email == 'anugrahluput@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || (
+        isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isNonEmptyString(val, maxLen) {
+      return val is string && val.size() > 0 && val.size() <= maxLen;
+    }
+
+    function isBoundedString(val, maxLen) {
+      return val is string && val.size() <= maxLen;
+    }
+
+    // --- Entity Validation Blueprints ---
+    function isValidSiswa(data) {
+      return data.keys().hasAll(['id', 'nisn', 'nama', 'kelas', 'ownerId', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'nisn', 'nama', 'kelas', 'ownerId', 'updatedAt'])
+        && isValidId(data.id)
+        && isNonEmptyString(data.nisn, 50)
+        && isNonEmptyString(data.nama, 150)
+        && isNonEmptyString(data.kelas, 50)
+        && isNonEmptyString(data.ownerId, 128)
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidMapel(data) {
+      return data.keys().hasAll(['id', 'namaMapel', 'semester', 'tahunAjaran', 'ownerId', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'namaMapel', 'semester', 'tahunAjaran', 'ownerId', 'updatedAt'])
+        && isValidId(data.id)
+        && isNonEmptyString(data.namaMapel, 120)
+        && isNonEmptyString(data.semester, 30)
+        && isNonEmptyString(data.tahunAjaran, 30)
+        && isNonEmptyString(data.ownerId, 128)
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidJadwal(data) {
+      return data.keys().hasAll(['id', 'hari', 'jam', 'kelas', 'mapel', 'ownerId', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'hari', 'jam', 'kelas', 'mapel', 'ownerId', 'updatedAt'])
+        && isValidId(data.id)
+        && isNonEmptyString(data.hari, 30)
+        && isNonEmptyString(data.jam, 50)
+        && isNonEmptyString(data.kelas, 50)
+        && isNonEmptyString(data.mapel, 120)
+        && isNonEmptyString(data.ownerId, 128)
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidLogAbsensi(data) {
+      return data.keys().hasAll(['id', 'waktu', 'tanggal', 'kelas', 'mapel', 'idSiswa', 'namaSiswa', 'status', 'bulan', 'tahun', 'namaGuru', 'ownerId', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'waktu', 'tanggal', 'kelas', 'mapel', 'idSiswa', 'namaSiswa', 'status', 'bulan', 'tahun', 'namaGuru', 'ownerId', 'updatedAt'])
+        && isValidId(data.id)
+        && isNonEmptyString(data.waktu, 30)
+        && isNonEmptyString(data.tanggal, 30)
+        && isNonEmptyString(data.kelas, 50)
+        && isNonEmptyString(data.mapel, 120)
+        && isNonEmptyString(data.idSiswa, 128)
+        && isNonEmptyString(data.namaSiswa, 150)
+        && data.status in ['Hadir', 'Izin', 'Sakit', 'Alpa']
+        && isNonEmptyString(data.bulan, 20)
+        && isNonEmptyString(data.tahun, 10)
+        && isNonEmptyString(data.namaGuru, 150)
+        && isNonEmptyString(data.ownerId, 128)
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidDataNilai(data) {
+      return data.keys().hasAll(['id', 'waktu', 'jenis', 'mapel', 'kelas', 'idSiswa', 'namaSiswa', 'nilai', 'namaGuru', 'ownerId', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'waktu', 'jenis', 'mapel', 'kelas', 'idSiswa', 'namaSiswa', 'nilai', 'namaGuru', 'ownerId', 'updatedAt'])
+        && isValidId(data.id)
+        && isNonEmptyString(data.waktu, 30)
+        && isNonEmptyString(data.jenis, 80)
+        && isNonEmptyString(data.mapel, 120)
+        && isNonEmptyString(data.kelas, 50)
+        && isNonEmptyString(data.idSiswa, 128)
+        && isNonEmptyString(data.namaSiswa, 150)
+        && ((data.nilai is number && data.nilai >= 0 && data.nilai <= 100) || data.nilai == '')
+        && isNonEmptyString(data.namaGuru, 150)
+        && isNonEmptyString(data.ownerId, 128)
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidJurnalAgenda(data) {
+      return data.keys().hasAll(['id', 'tanggal', 'jam', 'kelas', 'mapel', 'materi', 'status', 'absenSiswa', 'namaGuru', 'ownerId', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'tanggal', 'jam', 'kelas', 'mapel', 'materi', 'status', 'absenSiswa', 'ket', 'namaGuru', 'ownerId', 'updatedAt'])
+        && isValidId(data.id)
+        && isNonEmptyString(data.tanggal, 30)
+        && isNonEmptyString(data.jam, 50)
+        && isNonEmptyString(data.kelas, 50)
+        && isNonEmptyString(data.mapel, 120)
+        && isNonEmptyString(data.materi, 1000)
+        && isNonEmptyString(data.status, 50)
+        && isBoundedString(data.absenSiswa, 500)
+        && (!('ket' in data) || isBoundedString(data.ket, 1000))
+        && isNonEmptyString(data.namaGuru, 150)
+        && isNonEmptyString(data.ownerId, 128)
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidSiswaBimbingan(data) {
+      return data.keys().hasAll(['id', 'namaSiswa', 'kelas', 'ownerId', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'namaSiswa', 'kelas', 'ownerId', 'updatedAt'])
+        && isValidId(data.id)
+        && isNonEmptyString(data.namaSiswa, 150)
+        && isNonEmptyString(data.kelas, 50)
+        && isNonEmptyString(data.ownerId, 128)
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidBimbinganWali(data) {
+      return data.keys().hasAll(['id', 'tanggal', 'namaSiswa', 'kelas', 'jenis', 'kasus', 'tindakLanjut', 'guruWali', 'ownerId', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'tanggal', 'namaSiswa', 'kelas', 'jenis', 'kasus', 'tindakLanjut', 'guruWali', 'ownerId', 'updatedAt'])
+        && isValidId(data.id)
+        && isNonEmptyString(data.tanggal, 30)
+        && isNonEmptyString(data.namaSiswa, 150)
+        && isBoundedString(data.kelas, 50)
+        && isNonEmptyString(data.jenis, 100)
+        && isNonEmptyString(data.kasus, 2000)
+        && isNonEmptyString(data.tindakLanjut, 2000)
+        && isNonEmptyString(data.guruWali, 150)
+        && isNonEmptyString(data.ownerId, 128)
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidPengaturan(data) {
+      return data.keys().hasAll(['Nama_Guru', 'NIP_Guru', 'Pemerintah', 'Nama_Sekolah', 'Alamat_Sekolah', 'Nama_Kepsek', 'NIP_Kepsek', 'Tempat_Tanda_Tangan', 'Logo_Kiri', 'Logo_Kanan', 'ownerId', 'updatedAt'])
+        && data.keys().hasOnly(['Nama_Guru', 'NIP_Guru', 'Pemerintah', 'Nama_Sekolah', 'Alamat_Sekolah', 'Nama_Kepsek', 'NIP_Kepsek', 'Tempat_Tanda_Tangan', 'Logo_Kiri', 'Logo_Kanan', 'isDatabaseCleared', 'ownerId', 'updatedAt'])
+        && isBoundedString(data.Nama_Guru, 200)
+        && isBoundedString(data.NIP_Guru, 100)
+        && isBoundedString(data.Pemerintah, 200)
+        && isBoundedString(data.Nama_Sekolah, 200)
+        && isBoundedString(data.Alamat_Sekolah, 500)
+        && isBoundedString(data.Nama_Kepsek, 200)
+        && isBoundedString(data.NIP_Kepsek, 100)
+        && isBoundedString(data.Tempat_Tanda_Tangan, 150)
+        && isBoundedString(data.Logo_Kiri, 50000)
+        && isBoundedString(data.Logo_Kanan, 50000)
+        && (!('isDatabaseCleared' in data) || data.isDatabaseCleared is bool)
+        && isNonEmptyString(data.ownerId, 128)
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    // --- Collection Rules ---
+    match /data_siswa/{siswaId} {
+      allow get: if isValidId(siswaId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isBootstrappedAdmin());
+      allow create: if isSignedIn() && isValidId(siswaId) && isValidSiswa(incoming()) && incoming().ownerId == request.auth.uid && incoming().id == siswaId;
+      allow update: if isSignedIn() && isValidId(siswaId) && isValidSiswa(incoming()) && (isOwner(existing().ownerId) || isAdmin()) && incoming().ownerId == existing().ownerId && incoming().id == existing().id && incoming().diff(existing()).affectedKeys().hasOnly(['nisn', 'nama', 'kelas', 'updatedAt']);
+      allow delete: if isValidId(siswaId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+    }
+
+    match /mapel/{mapelId} {
+      allow get: if isValidId(mapelId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isBootstrappedAdmin());
+      allow create: if isSignedIn() && isValidId(mapelId) && isValidMapel(incoming()) && incoming().ownerId == request.auth.uid && incoming().id == mapelId;
+      allow update: if isSignedIn() && isValidId(mapelId) && isValidMapel(incoming()) && (isOwner(existing().ownerId) || isAdmin()) && incoming().ownerId == existing().ownerId && incoming().id == existing().id && incoming().diff(existing()).affectedKeys().hasOnly(['namaMapel', 'semester', 'tahunAjaran', 'updatedAt']);
+      allow delete: if isValidId(mapelId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+    }
+
+    match /jadwal/{jadwalId} {
+      allow get: if isValidId(jadwalId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isBootstrappedAdmin());
+      allow create: if isSignedIn() && isValidId(jadwalId) && isValidJadwal(incoming()) && incoming().ownerId == request.auth.uid && incoming().id == jadwalId;
+      allow update: if isSignedIn() && isValidId(jadwalId) && isValidJadwal(incoming()) && (isOwner(existing().ownerId) || isAdmin()) && incoming().ownerId == existing().ownerId && incoming().id == existing().id && incoming().diff(existing()).affectedKeys().hasOnly(['hari', 'jam', 'kelas', 'mapel', 'updatedAt']);
+      allow delete: if isValidId(jadwalId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+    }
+
+    match /log_absensi/{absensiId} {
+      allow get: if isValidId(absensiId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isBootstrappedAdmin());
+      allow create: if isSignedIn() && isValidId(absensiId) && isValidLogAbsensi(incoming()) && incoming().ownerId == request.auth.uid && incoming().id == absensiId;
+      allow update: if isSignedIn() && isValidId(absensiId) && isValidLogAbsensi(incoming()) && (isOwner(existing().ownerId) || isAdmin()) && incoming().ownerId == existing().ownerId && incoming().id == existing().id && incoming().diff(existing()).affectedKeys().hasOnly(['waktu', 'tanggal', 'kelas', 'mapel', 'idSiswa', 'namaSiswa', 'status', 'bulan', 'tahun', 'namaGuru', 'updatedAt']);
+      allow delete: if isValidId(absensiId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+    }
+
+    match /data_nilai/{nilaiId} {
+      allow get: if isValidId(nilaiId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isBootstrappedAdmin());
+      allow create: if isSignedIn() && isValidId(nilaiId) && isValidDataNilai(incoming()) && incoming().ownerId == request.auth.uid && incoming().id == nilaiId;
+      allow update: if isSignedIn() && isValidId(nilaiId) && isValidDataNilai(incoming()) && (isOwner(existing().ownerId) || isAdmin()) && incoming().ownerId == existing().ownerId && incoming().id == existing().id && incoming().diff(existing()).affectedKeys().hasOnly(['waktu', 'jenis', 'mapel', 'kelas', 'idSiswa', 'namaSiswa', 'nilai', 'namaGuru', 'updatedAt']);
+      allow delete: if isValidId(nilaiId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+    }
+
+    match /jurnal_agenda/{agendaId} {
+      allow get: if isValidId(agendaId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isBootstrappedAdmin());
+      allow create: if isSignedIn() && isValidId(agendaId) && isValidJurnalAgenda(incoming()) && incoming().ownerId == request.auth.uid && incoming().id == agendaId;
+      allow update: if isSignedIn() && isValidId(agendaId) && isValidJurnalAgenda(incoming()) && (isOwner(existing().ownerId) || isAdmin()) && incoming().ownerId == existing().ownerId && incoming().id == existing().id && incoming().diff(existing()).affectedKeys().hasOnly(['tanggal', 'jam', 'kelas', 'mapel', 'materi', 'status', 'absenSiswa', 'ket', 'namaGuru', 'updatedAt']);
+      allow delete: if isValidId(agendaId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+    }
+
+    match /siswa_bimbingan/{siswaBimbinganId} {
+      allow get: if isValidId(siswaBimbinganId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isBootstrappedAdmin());
+      allow create: if isSignedIn() && isValidId(siswaBimbinganId) && isValidSiswaBimbingan(incoming()) && incoming().ownerId == request.auth.uid && incoming().id == siswaBimbinganId;
+      allow update: if isSignedIn() && isValidId(siswaBimbinganId) && isValidSiswaBimbingan(incoming()) && (isOwner(existing().ownerId) || isAdmin()) && incoming().ownerId == existing().ownerId && incoming().id == existing().id && incoming().diff(existing()).affectedKeys().hasOnly(['namaSiswa', 'kelas', 'updatedAt']);
+      allow delete: if isValidId(siswaBimbinganId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+    }
+
+    match /bimbingan_wali/{bimbinganId} {
+      allow get: if isValidId(bimbinganId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isBootstrappedAdmin());
+      allow create: if isSignedIn() && isValidId(bimbinganId) && isValidBimbinganWali(incoming()) && incoming().ownerId == request.auth.uid && incoming().id == bimbinganId;
+      allow update: if isSignedIn() && isValidId(bimbinganId) && isValidBimbinganWali(incoming()) && (isOwner(existing().ownerId) || isAdmin()) && incoming().ownerId == existing().ownerId && incoming().id == existing().id && incoming().diff(existing()).affectedKeys().hasOnly(['tanggal', 'namaSiswa', 'kelas', 'jenis', 'kasus', 'tindakLanjut', 'guruWali', 'updatedAt']);
+      allow delete: if isValidId(bimbinganId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+    }
+
+    match /pengaturan/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isBootstrappedAdmin());
+      allow create: if isSignedIn() && isValidId(userId) && isValidPengaturan(incoming()) && isOwner(userId) && incoming().ownerId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(userId) && isValidPengaturan(incoming()) && (isOwner(userId) || isAdmin()) && incoming().ownerId == existing().ownerId && incoming().diff(existing()).affectedKeys().hasOnly(['Nama_Guru', 'NIP_Guru', 'Pemerintah', 'Nama_Sekolah', 'Alamat_Sekolah', 'Nama_Kepsek', 'NIP_Kepsek', 'Tempat_Tanda_Tangan', 'Logo_Kiri', 'Logo_Kanan', 'isDatabaseCleared', 'updatedAt']);
+      allow delete: if isValidId(userId) && (isOwner(userId) || isAdmin());
+    }
+
+    match /admins/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list, write: if false;
+    }
+  }
+}

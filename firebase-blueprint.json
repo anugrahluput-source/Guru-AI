@@ -1,0 +1,210 @@
+{
+  "entities": {
+    "data_siswa": {
+      "title": "Data Siswa",
+      "description": "Master Data Siswa per Guru",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "nisn": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "nama": { "type": "string", "minLength": 1, "maxLength": 150 },
+        "kelas": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "nisn", "nama", "kelas", "ownerId", "updatedAt"]
+    },
+    "mapel": {
+      "title": "Mata Pelajaran",
+      "description": "Master Mata Pelajaran",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "namaMapel": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "semester": { "type": "string", "minLength": 1, "maxLength": 30 },
+        "tahunAjaran": { "type": "string", "minLength": 1, "maxLength": 30 },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "namaMapel", "semester", "tahunAjaran", "ownerId", "updatedAt"]
+    },
+    "jadwal": {
+      "title": "Jadwal Mengajar",
+      "description": "Jadwal Tatap Muka Guru",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "hari": { "type": "string", "minLength": 1, "maxLength": 30 },
+        "jam": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "kelas": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "mapel": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "hari", "jam", "kelas", "mapel", "ownerId", "updatedAt"]
+    },
+    "log_absensi": {
+      "title": "Log Absensi",
+      "description": "Catatan Kehadiran Harian Siswa",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "waktu": { "type": "string", "minLength": 1, "maxLength": 30 },
+        "tanggal": { "type": "string", "minLength": 1, "maxLength": 30 },
+        "kelas": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "mapel": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "idSiswa": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "namaSiswa": { "type": "string", "minLength": 1, "maxLength": 150 },
+        "status": { "type": "string", "enum": ["Hadir", "Izin", "Sakit", "Alpa"] },
+        "bulan": { "type": "string", "minLength": 1, "maxLength": 20 },
+        "tahun": { "type": "string", "minLength": 1, "maxLength": 10 },
+        "namaGuru": { "type": "string", "minLength": 1, "maxLength": 150 },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "waktu", "tanggal", "kelas", "mapel", "idSiswa", "namaSiswa", "status", "bulan", "tahun", "namaGuru", "ownerId", "updatedAt"]
+    },
+    "data_nilai": {
+      "title": "Data Nilai",
+      "description": "Nilai Akademik Siswa",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "waktu": { "type": "string", "minLength": 1, "maxLength": 30 },
+        "jenis": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "mapel": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "kelas": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "idSiswa": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "namaSiswa": { "type": "string", "minLength": 1, "maxLength": 150 },
+        "nilai": { "type": "number" },
+        "namaGuru": { "type": "string", "minLength": 1, "maxLength": 150 },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "waktu", "jenis", "mapel", "kelas", "idSiswa", "namaSiswa", "nilai", "namaGuru", "ownerId", "updatedAt"]
+    },
+    "jurnal_agenda": {
+      "title": "Jurnal Agenda Mengajar",
+      "description": "Catatan Harian Pembelajaran",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "tanggal": { "type": "string", "minLength": 1, "maxLength": 30 },
+        "jam": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "kelas": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "mapel": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "materi": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "status": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "absenSiswa": { "type": "string", "maxLength": 500 },
+        "ket": { "type": "string", "maxLength": 1000 },
+        "namaGuru": { "type": "string", "minLength": 1, "maxLength": 150 },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "tanggal", "jam", "kelas", "mapel", "materi", "status", "absenSiswa", "namaGuru", "ownerId", "updatedAt"]
+    },
+    "siswa_bimbingan": {
+      "title": "Daftar Siswa Bimbingan",
+      "description": "Daftar Siswa Perwalian",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "namaSiswa": { "type": "string", "minLength": 1, "maxLength": 150 },
+        "kelas": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "namaSiswa", "kelas", "ownerId", "updatedAt"]
+    },
+    "bimbingan_wali": {
+      "title": "Catatan Bimbingan Wali",
+      "description": "Catatan Kasus & Tindak Lanjut Bimbingan",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "tanggal": { "type": "string", "minLength": 1, "maxLength": 30 },
+        "namaSiswa": { "type": "string", "minLength": 1, "maxLength": 150 },
+        "kelas": { "type": "string", "maxLength": 50 },
+        "jenis": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "kasus": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "tindakLanjut": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "guruWali": { "type": "string", "minLength": 1, "maxLength": 150 },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "tanggal", "namaSiswa", "kelas", "jenis", "kasus", "tindakLanjut", "guruWali", "ownerId", "updatedAt"]
+    },
+    "pengaturan": {
+      "title": "Pengaturan Aplikasi",
+      "description": "Profil Guru dan Kop Surat Sekolah per Akun",
+      "type": "object",
+      "properties": {
+        "Nama_Guru": { "type": "string", "maxLength": 200 },
+        "NIP_Guru": { "type": "string", "maxLength": 100 },
+        "Pemerintah": { "type": "string", "maxLength": 200 },
+        "Nama_Sekolah": { "type": "string", "maxLength": 200 },
+        "Alamat_Sekolah": { "type": "string", "maxLength": 500 },
+        "Nama_Kepsek": { "type": "string", "maxLength": 200 },
+        "NIP_Kepsek": { "type": "string", "maxLength": 100 },
+        "Tempat_Tanda_Tangan": { "type": "string", "maxLength": 150 },
+        "Logo_Kiri": { "type": "string", "maxLength": 50000 },
+        "Logo_Kanan": { "type": "string", "maxLength": 50000 },
+        "isDatabaseCleared": { "type": "boolean" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["Nama_Guru", "NIP_Guru", "Pemerintah", "Nama_Sekolah", "Alamat_Sekolah", "Nama_Kepsek", "NIP_Kepsek", "Tempat_Tanda_Tangan", "Logo_Kiri", "Logo_Kanan", "ownerId", "updatedAt"]
+    },
+    "admins": {
+      "title": "Admin Registry",
+      "description": "Daftar Admin Aplikasi",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 200 }
+      },
+      "required": ["email"]
+    }
+  },
+  "firestore": {
+    "/data_siswa/{siswaId}": {
+      "schema": { "$ref": "#/entities/data_siswa" },
+      "description": "Master Data Siswa milik guru terkait"
+    },
+    "/mapel/{mapelId}": {
+      "schema": { "$ref": "#/entities/mapel" },
+      "description": "Master Mata Pelajaran milik guru terkait"
+    },
+    "/jadwal/{jadwalId}": {
+      "schema": { "$ref": "#/entities/jadwal" },
+      "description": "Jadwal Mengajar milik guru terkait"
+    },
+    "/log_absensi/{absensiId}": {
+      "schema": { "$ref": "#/entities/log_absensi" },
+      "description": "Log Absensi Siswa milik guru terkait"
+    },
+    "/data_nilai/{nilaiId}": {
+      "schema": { "$ref": "#/entities/data_nilai" },
+      "description": "Data Nilai Siswa milik guru terkait"
+    },
+    "/jurnal_agenda/{agendaId}": {
+      "schema": { "$ref": "#/entities/jurnal_agenda" },
+      "description": "Jurnal Agenda Mengajar milik guru terkait"
+    },
+    "/siswa_bimbingan/{siswaBimbinganId}": {
+      "schema": { "$ref": "#/entities/siswa_bimbingan" },
+      "description": "Daftar Siswa Perwalian milik guru terkait"
+    },
+    "/bimbingan_wali/{bimbinganId}": {
+      "schema": { "$ref": "#/entities/bimbingan_wali" },
+      "description": "Catatan Bimbingan Guru Wali milik guru terkait"
+    },
+    "/pengaturan/{userId}": {
+      "schema": { "$ref": "#/entities/pengaturan" },
+      "description": "Pengaturan & Profil Sekolah milik guru terkait"
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/admins" },
+      "description": "Registry Admin Aplikasi"
+    }
+  }
+}
